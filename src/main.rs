@@ -20,7 +20,7 @@ async fn main() {
                     #[cfg(target_family = "unix")]
                     let buf = buffer.as_mut_ptr() as *mut libc::c_void;
                     #[cfg(target_family = "unix")]
-                    let buf_len = buf.len();
+                    let buf_len = buffer.len();
                     
                     #[cfg(target_family = "windows")]
                     let sock =  udp.as_raw_socket() as usize;
