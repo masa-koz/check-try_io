@@ -9,7 +9,7 @@ use std::os::windows::prelude::AsRawSocket;
 async fn main() {
     let task_recv = tokio::spawn(async move {
         let udp = tokio::net::UdpSocket::bind("0.0.0.0:3456").await.unwrap();
-        let mut buf = vec![0; 1500];
+        let mut buffer = vec![0; 1500];
 
         loop {
             let _ = udp.readable().await;
@@ -17,14 +17,26 @@ async fn main() {
                 let res = unsafe {
                     #[cfg(target_family = "unix")]
                     let sock = udp.as_raw_fd();
+                    #[cfg(target_family = "unix")]
+                    let buf = buffer.as_mut_ptr() as *mut libc::c_void;
+                    #[cfg(target_family = "unix")]
+                    let buf_len = buf.len();
+                    
                     #[cfg(target_family = "windows")]
-                    let sock =  udp.as_raw_socket();
+                    let sock =  udp.as_raw_socket() as usize;
+                    #[cfg(target_family = "windows")]
+                    let buf = buffer.as_mut_ptr() as *mut i8;
+                    #[cfg(target_family = "windows")]
+                    let buf_len = buffer.len() as i32;
+        
 
-                    libc::recv(
+                    libc::recvfrom(
                         sock,
-                        buf.as_mut_ptr() as *mut libc::c_void,
-                        buf.len(),
-                        0
+                        buf,
+                        buf_len,
+                        0,
+                        std::ptr::null_mut(),
+                        std::ptr::null_mut()
                     )
                 };
                 if res < 0 {
